@@ -2,12 +2,12 @@
     
 </script>
 
-<div class="container">
+<div class="main-container">
     <slot/>
 </div>
 
 <style>
-    .container{
+    .main-container{
         width: 100%;
         height: 100%;
         overflow: hidden;
