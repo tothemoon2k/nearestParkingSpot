@@ -8,10 +8,13 @@
     let mapContainer;
     let lng, lat, zoom;
     let steps = [];
+    let duration;
+    let distance;
 
     lng = -71.224518;
     lat = 42.213995;
     zoom = 16;
+    let start;
 
     onMount(() => {
         const initialState = { lng: lng, lat: lat, zoom: zoom };
@@ -24,9 +27,27 @@
             zoom: initialState.zoom,
         });
 
-        const start = [-80.83783554386717, 35.2270691431859];
-
     async function getRoute(end) {
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            let userLng = position.coords.longitude;
+            let userLat = position.coords.latitude;
+            console.log("get location")
+            start = [userLat, userLng];
+            map.setCenter([userLng, userLat])
+            map.getSource('point').setData({
+                'type': 'FeatureCollection',
+                'features': [
+                    {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [userLng, userLat]
+                        }
+                    }
+                ]
+            });
+        });
         // make a directions request using cycling profile
         // an arbitrary start will always be the same
         // only the end or destination will change
@@ -38,6 +59,8 @@
         const json = await query.json();
         const data = json.routes[0];
         steps = data.legs[0].steps;
+        duration = (Math.floor(data.duration / 60));
+        distance = ((data.distance) * 0.000621371).toFixed(2);
         const route = data.geometry.coordinates;
         const geojson = {
             type: 'Feature',
@@ -131,23 +154,7 @@
             });
             });
 
-        navigator.geolocation.getCurrentPosition((position) => {
-            let userLng = position.coords.longitude;
-            let userLat = position.coords.latitude;
-            map.setCenter([userLng, userLat])
-            map.getSource('point').setData({
-                'type': 'FeatureCollection',
-                'features': [
-                    {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [userLng, userLat]
-                        }
-                    }
-                ]
-            });
-        });
+        
 
 
     });
@@ -161,8 +168,10 @@
         <span class="text-2xl relative flex justify-center items-center">Find the Nearest <br> Parking Spot</span>
       </a>-->
     <div class="w-1/3 h-fit absolute bg-gray-800 z-10 m-6 shadow-xl rounded-2xl ">
-        <h2 class="text-white text-2xl text-center mt-10 mb-8 font-semibold leading-6">The nearest parking space is 3 mins away</h2>
+        <h2 class="text-white text-2xl text-center mt-10 mb-8 font-semibold leading-6">The nearest parking space is {duration} mins away</h2>
         <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/ios-filled/200/ffffff/marker.png" alt=""> 300 NW Brevard Blvd</p>
+
+        <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/pastel-glyph/200/ffffff/route--v1.png" alt="">{distance} Miles Away</p>
         
         <p class="text-white text-xl font-medium ml-4 flex items-center mb-10"><img class="h-6 w-auto mr-2" src="https://img.icons8.com/ios-filled/200/ffffff/money-bag.png" alt="">$2.00</p>
 
