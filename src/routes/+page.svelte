@@ -180,7 +180,7 @@
         <img class="h-14 mr-3.5" src="https://img.icons8.com/ios-filled/200/ffffff/parking.png" alt="">
         <span class="text-2xl relative flex justify-center items-center">Find the Nearest <br> Parking Spot</span>
       </a>-->
-    <div class="mt-5 md:mt-0 w-5/6 md:w-1/2 lg:w-1/3 h-fit absolute bg-gray-800 z-10 md:m-6 shadow-xl rounded-2xl ">
+   <!-- <div class="mt-5 md:mt-0 w-5/6 md:w-1/2 lg:w-1/3 h-fit absolute bg-gray-800 z-10 md:m-6 shadow-xl rounded-2xl ">
         <h2 class="text-white text-2xl text-center mt-10 mb-8 font-semibold leading-6">The nearest parking space is {duration} mins away</h2>
         <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/ios-filled/200/ffffff/marker.png" alt=""> 300 NW Brevard Blvd</p>
 
@@ -198,7 +198,7 @@
             {/each}
         </ul>
 
-    </div>
+    </div>-->
 
     <div class="map" bind:this={mapContainer} />
 </div>
