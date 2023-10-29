@@ -1,5 +1,4 @@
 <script>
-    import axios from "axios";
     import { Map } from "mapbox-gl";
     import { onMount, onDestroy } from "svelte";
     import carIcon from "$lib/assets/car.png";
@@ -10,96 +9,67 @@
     let steps = [];
     let duration;
     let distance;
-
-    lng = -71.224518;
-    lat = 42.213995;
-    zoom = 16;
-    let start;
+    let start = [];
 
     onMount(() => {
-        const initialState = { lng: lng, lat: lat, zoom: zoom };
 
         map = new Map({
             container: mapContainer,
             accessToken: "pk.eyJ1Ijoid29udG9uLWRvbiIsImEiOiJjbG9hODJra2gwYmxhMmxxb283eWVpZXY4In0.L7SGeg75p94O8OLTH8OS0g",
             style: "mapbox://styles/mapbox/navigation-night-v1",
-            center: [initialState.lng, initialState.lat],
-            zoom: initialState.zoom,
+            center: [-71.224518, 42.213995], //Inital Center
+            zoom: 16, //Inital Zoom
         });
 
-    async function getRoute(end) {
-
-        navigator.geolocation.getCurrentPosition((position) => {
-            let userLng = position.coords.longitude;
-            let userLat = position.coords.latitude;
-            console.log("get location")
-            start = [userLat, userLng];
-            map.setCenter([userLng, userLat])
-            map.getSource('point').setData({
-                'type': 'FeatureCollection',
-                'features': [
-                    {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [userLng, userLat]
-                        }
+        async function getRoute(end) {
+            const query = await fetch(
+                `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};-80.85083554386717,35.2270691431859?steps=true&geometries=geojson&access_token=pk.eyJ1Ijoid29udG9uLWRvbiIsImEiOiJjbG9hODJra2gwYmxhMmxxb283eWVpZXY4In0.L7SGeg75p94O8OLTH8OS0g`,
+                //random end address
+                { method: 'GET' }
+            );
+            const json = await query.json();
+            const data = json.routes[0];
+            steps = data.legs[0].steps;
+            duration = (Math.floor(data.duration / 60));
+            distance = ((data.distance) * 0.000621371).toFixed(2);
+            const route = data.geometry.coordinates;
+            const geojson = {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                type: 'LineString',
+                coordinates: route
+                }
+            };
+            // if the route already exists on the map, we'll reset it using setData
+            if (map.getSource('route')) {
+                map.getSource('route').setData(geojson);
+            }
+            // otherwise, we'll make a new request
+            else {
+                map.addLayer({
+                    id: 'route',
+                    type: 'line',
+                    source: {
+                        type: 'geojson',
+                        data: geojson
+                    },
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#ffffff',
+                        'line-width': 8,
+                        'line-opacity': 0.8
                     }
-                ]
-            });
-        });
-        // make a directions request using cycling profile
-        // an arbitrary start will always be the same
-        // only the end or destination will change
-        console.log(start)
-        const query = await fetch(
-            `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};-80.85083554386717,35.2270691431859?steps=true&geometries=geojson&access_token=pk.eyJ1Ijoid29udG9uLWRvbiIsImEiOiJjbG9hODJra2gwYmxhMmxxb283eWVpZXY4In0.L7SGeg75p94O8OLTH8OS0g`,
-            { method: 'GET' }
-        );
-        const json = await query.json();
-        const data = json.routes[0];
-        steps = data.legs[0].steps;
-        duration = (Math.floor(data.duration / 60));
-        distance = ((data.distance) * 0.000621371).toFixed(2);
-        const route = data.geometry.coordinates;
-        const geojson = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-            type: 'LineString',
-            coordinates: route
+                });
             }
-        };
-        // if the route already exists on the map, we'll reset it using setData
-        if (map.getSource('route')) {
-            map.getSource('route').setData(geojson);
-        }
-        // otherwise, we'll make a new request
-        else {
-            map.addLayer({
-            id: 'route',
-            type: 'line',
-            source: {
-                type: 'geojson',
-                data: geojson
-            },
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#ffffff',
-                'line-width': 8,
-                'line-opacity': 0.8
-            }
-    });
-  }
-  // add turn instructions here at the end
-}
+    }
 
         map.on('load', () => {
             // Load an image from an external URL.
-            map.loadImage( carIcon,
+            map.loadImage(carIcon,
                 (error, image) => {
                     if (error) throw error;
                     
@@ -108,35 +78,55 @@
                     
                     // Add a data source containing one point feature.
                     map.addSource('point', {
-                    'type': 'geojson',
-                    'data': {
-                    'type': 'FeatureCollection',
-                    'features': [
-                    {
-                    'type': 'Feature',
-                    'geometry': {
-                    'type': 'Point',
-                    'coordinates': [-71.224518, 42.213995]
-                    }
-                    }
-                    ]
-                    }
+                        'type': 'geojson',
+                        'data': {
+                            'type': 'FeatureCollection',
+                            'features': [
+                                {
+                                    'type': 'Feature',
+                                    'geometry': {
+                                        'type': 'Point',
+                                        'coordinates': [start[0], start[1]]
+                                    }
+                                }
+                            ]
+                        }
                     });
             
-            // Add a layer to use the image to represent the data.
-            map.addLayer({
-            'id': 'points',
-            'type': 'symbol',
-            'source': 'point', // reference the data source
-            'layout': {
-            'icon-image': 'car', // reference the image
-            'icon-size': 0.12
-            }
-            });
+                    // Add a layer to use the image to represent the data.
+                    map.addLayer({
+                        'id': 'points',
+                        'type': 'symbol',
+                        'source': 'point', // reference the data source
+                        'layout': {
+                            'icon-image': 'car', // reference the image
+                            'icon-size': 0.12,
+                            'icon-rotate': ['get', 'bearing'],
+                        }
+                    });
+                    
             }
             );
 
-            getRoute(start);
+            navigator.geolocation.getCurrentPosition((position) => {
+                let userLng = position.coords.longitude;
+                let userLat = position.coords.latitude;
+                start = [userLng, userLat]
+                getRoute(start);
+                map.setCenter([userLng, userLat])
+                map.getSource('point').setData({
+                    'type': 'FeatureCollection',
+                    'features': [
+                        {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [userLng, userLat]
+                            }
+                        }
+                    ]
+                });
+            });
 
             // Add starting point to the map
             map.addLayer({
@@ -152,12 +142,35 @@
                 'circle-color': '#3887be'
                 }
             });
-            });
+        });
 
-        
-
-
+        setInterval(updateLocation, 5000)
     });
+    
+
+    const updateLocation = () => {
+        console.log("testindasfsd")
+        navigator.geolocation.getCurrentPosition((position) => {
+            let userLng = position.coords.longitude;
+            let userLat = position.coords.latitude;
+            console.log(userLng, userLat)
+            start = [userLng, userLat];
+            map.setCenter([userLng, userLat])
+            map.getSource('point').setData({
+                'type': 'FeatureCollection',
+                'features': [
+                    {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [userLng, userLat]
+                        }
+                    }
+                    ]
+                });    
+            });
+    }
+
     
 </script>
 
