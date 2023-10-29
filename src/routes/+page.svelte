@@ -10,6 +10,7 @@
     let duration;
     let distance;
     let start = [];
+    let mode = "Details";
 
     onMount(() => {
 
@@ -144,17 +145,13 @@
             });
         });
 
-        setInterval(updateLocation, 5000)
-    });
-    
-
-    const updateLocation = () => {
-        console.log("testindasfsd")
+        const updateLocation = () => {
         navigator.geolocation.getCurrentPosition((position) => {
             let userLng = position.coords.longitude;
             let userLat = position.coords.latitude;
-            console.log(userLng, userLat)
             start = [userLng, userLat];
+            console.log("running")
+            getRoute(start);
             map.setCenter([userLng, userLat])
             map.getSource('point').setData({
                 'type': 'FeatureCollection',
@@ -171,34 +168,72 @@
             });
     }
 
+        setInterval(updateLocation, 5000)
+    });
     
+
+    function formatDistance(meters) {
+        const miles = (meters * 0.000621371);
+        if (miles >= 1) {
+            return `${miles.toLocaleString()} mi`; 
+        } else {
+            return `${(miles * 5280).toFixed(0)} ft`; 
+        }
+}
+
+    const go = () => {
+        map.zoomIn(4);
+        mode = "Travel";
+        console.log(steps[0].maneuver.instruction)
+    }
+
+    const iconImages = {
+            'Turn left': 'https://cdn-icons-png.flaticon.com/512/724/724999.png',
+            'Turn right': 'https://cdn-icons-png.flaticon.com/512/725/725000.png',
+            'Go straight': 'https://static.thenounproject.com/png/802358-200.png',
+            'Turn slight left': 'https://cdn-icons-png.flaticon.com/512/724/724999.png',
+            'Turn slight right': 'https://cdn-icons-png.flaticon.com/512/725/725000.png',
+            'depart': 'https://cdn-icons-png.flaticon.com/512/64/64227.png',
+        };
+        
 </script>
 
 
 <div class="map-wrap flex justify-center md:justify-start">
-    <!--<a href="/reserve" class="m-6 inline-flex items-center justify-center px-8 py-4 md:py-6 text-base font-medium text-center text-green-100 border border-green-500 rounded-lg shadow-sm cursor-pointer hover:text-white bg-gradient-to-br from-green-500 via-green-500 to-green-600">
+    <a href="/reserve" class="m-6 inline-flex items-center justify-center px-8 py-4 md:py-6 text-base font-medium text-center text-green-100 border border-green-500 rounded-lg shadow-sm cursor-pointer hover:text-white bg-gradient-to-br from-green-500 via-green-500 to-green-600">
         <img class="h-14 mr-3.5" src="https://img.icons8.com/ios-filled/200/ffffff/parking.png" alt="">
         <span class="text-2xl relative flex justify-center items-center">Find the Nearest <br> Parking Spot</span>
-      </a>-->
-   <!-- <div class="mt-5 md:mt-0 w-5/6 md:w-1/2 lg:w-1/3 h-fit absolute bg-gray-800 z-10 md:m-6 shadow-xl rounded-2xl ">
-        <h2 class="text-white text-2xl text-center mt-10 mb-8 font-semibold leading-6">The nearest parking space is {duration} mins away</h2>
-        <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/ios-filled/200/ffffff/marker.png" alt=""> 300 NW Brevard Blvd</p>
+      </a>
+    <div class="mt-5 md:mt-0 w-5/6 md:w-1/2 lg:w-1/3 h-fit absolute bg-gray-800 z-10 md:m-6 shadow-xl rounded-2xl ">
+        {#if mode === "Details"}
+            <h2 class="text-white text-2xl text-center mt-10 mb-8 font-semibold leading-6">The nearest parking space is {duration} mins away</h2>
+            <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/ios-filled/200/ffffff/marker.png" alt=""> 300 NW Brevard Blvd</p>
 
-        <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/pastel-glyph/200/ffffff/route--v1.png" alt="">{distance} Miles Away</p>
-        
-        <p class="text-white text-xl font-medium ml-4 flex items-center mb-10"><img class="h-6 w-auto mr-2" src="https://img.icons8.com/ios-filled/200/ffffff/money-bag.png" alt="">$2.00</p>
+            <p class="text-white text-xl font-medium ml-4 flex items-center mb-4"><img class="h-6 w-auto mr-1" src="https://img.icons8.com/pastel-glyph/200/ffffff/route--v1.png" alt="">{distance} Miles Away</p>
+            
+            <p class="text-white text-xl font-medium ml-4 flex items-center mb-10"><img class="h-6 w-auto mr-2" src="https://img.icons8.com/ios-filled/200/ffffff/money-bag.png" alt="">$2.00</p>
 
-        
+            
 
-        
-        <p class="text-white text-2xl font-semibold ml-4 mb-4">Directions</p>
-        <ul class="text-white text-lg font-medium mb-6 ml-4 text-gray-300">
-            {#each steps as step}
-                <li class="my-2">{step.maneuver.instruction}</li>
-            {/each}
-        </ul>
+            
+            <p class="text-white text-2xl font-semibold ml-4 mb-4">Directions</p>
+            <ul class="text-white text-lg font-medium mb-6 ml-4 text-gray-300">
+                {#each steps as step}
+                    <li class="my-2">{step.maneuver.instruction}</li>
+                {/each}
+            </ul>
 
-    </div>-->
+            <button on:click={go}>Go</button>
+        {:else if mode === "Travel"}
+            <div class="flex w-full h-full">
+                <img class="h-20 w-auto" src={iconImages[steps[0].maneuver.instruction]} alt="">
+                <div>
+                    <h1 class="text-white text-2xl text-center font-semibold leading-6">{formatDistance(steps[0].distance)}</h1>
+                    <p class="text-white text-xl font-medium flex items-center">{steps[0].maneuver.instruction}</p>
+                </div>
+            </div>
+        {/if}
+    </div>
 
     <div class="map" bind:this={mapContainer} />
 </div>
